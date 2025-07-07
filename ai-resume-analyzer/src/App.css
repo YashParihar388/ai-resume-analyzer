@@ -1,0 +1,29 @@
+.App {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f9f9f9;
+  min-height: 100vh;
+}
+
+.result {
+  background-color: #e6fffa;
+  border-radius: 10px;
+  padding: 20px;
+  width: 80%;
+  margin: 20px auto;
+  text-align: left;
+}
+
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+li {
+  background: #c6f6d5;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 5px;
+  display: inline-block;
+}
