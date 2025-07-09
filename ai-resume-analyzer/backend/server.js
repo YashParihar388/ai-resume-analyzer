@@ -2,9 +2,14 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const PDFParser = require("pdf2json");
+const mammoth = require("mammoth");
+const path = require("path");
 const fs = require('fs');
 const axios = require('axios');
+const vision = require('@google-cloud/vision');
 require('dotenv').config();
+
+const visionClient = new vision.ImageAnnotatorClient();
 
 const app = express();
 app.use(cors());
@@ -20,26 +25,35 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     let text;
     try {
+      const ext = path.extname(req.file.originalname).toLowerCase();
       const fileBuffer = fs.readFileSync(req.file.path);
-      const pdfParser = new PDFParser();
-      text = await Promise.race([
-        new Promise((resolve, reject) => {
-          pdfParser.on("pdfParser_dataError", errData => reject(errData.parserError));
-          pdfParser.on("pdfParser_dataReady", pdfData => {
-            const rawText = pdfParser.getRawTextContent();
-            resolve(rawText);
-          });
-          pdfParser.parseBuffer(fileBuffer);
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("PDF parsing timed out")), 10000)) // 10s timeout
-      ]);
-    } catch (pdfErr) {
-      console.error("❌ PDF parsing error (pdf2json):", pdfErr);
-      return res.status(400).json({ error: "Failed to parse PDF with pdf2json. Please upload a valid, non-encrypted PDF file." });
+      if (ext === ".pdf") {
+        // Use Google Cloud Vision OCR for PDFs
+        const [result] = await visionClient.batchAnnotateFiles({
+          requests: [{
+            inputConfig: {
+              content: fileBuffer.toString('base64'),
+              mimeType: 'application/pdf',
+            },
+            features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+          }],
+        });
+        text = result.responses[0].responses
+          .map(r => r.fullTextAnnotation?.text || '')
+          .join('\n');
+      } else if (ext === ".docx") {
+        const result = await mammoth.extractRawText({ buffer: fileBuffer });
+        text = result.value;
+      } else {
+        return res.status(400).json({ error: "Unsupported file type. Please upload a PDF or DOCX file." });
+      }
+    } catch (parseErr) {
+      console.error("❌ File parsing error:", parseErr);
+      return res.status(400).json({ error: "Failed to parse file. Please upload a valid, non-encrypted PDF or DOCX file." });
     }
 
     if (!text || text.trim().length < 30) {
-      return res.status(400).json({ error: "Resume text is empty or too short. Please upload a different PDF." });
+      return res.status(400).json({ error: "Resume text is empty or too short. Please upload a different file." });
     }
 
     const prompt = `Extract the following from this resume:\n\n${text}\n\nReturn JSON with: name, education, experience, skills (array), summary.`;

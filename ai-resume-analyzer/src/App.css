@@ -21,9 +21,61 @@ ul {
 }
 
 li {
-  background: #c6f6d5;
   margin: 5px 0;
   padding: 8px;
   border-radius: 5px;
   display: inline-block;
+  transition: background 0.2s, color 0.2s;
+}
+
+li[style*="color: green"] {
+  background: #d1fae5; /* Matched skill: light green */
+  color: #065f46;
+}
+
+li[style*="color: red"] {
+  background: #fee2e2; /* Missing skill: light red */
+  color: #991b1b;
+}
+
+li:hover {
+  background: #fbbf24; /* Amber on hover */
+  color: #1f2937;
+  cursor: pointer;
+}
+
+button {
+  background: #3182ce;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1rem;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #2b6cb0;
+}
+
+@media (max-width: 600px) {
+  .result {
+    width: 98%;
+    padding: 10px;
+  }
+  .App {
+    padding: 5px;
+  }
+  textarea {
+    width: 100% !important;
+    font-size: 1rem;
+  }
+  h1, h2, h3 {
+    font-size: 1.1em;
+  }
+  button {
+    width: 100%;
+    font-size: 1em;
+  }
 }
